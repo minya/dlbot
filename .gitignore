@@ -1,0 +1,7 @@
+#C++
+*.o
+
+#Common
+.vscode/
+build/
+tgbot-cpp/
