@@ -14,6 +14,6 @@ if (CURL_FOUND)
     add_definitions(-DHAVE_CURL)
 endif()
 
-add_executable(dlbot main.cpp path_util.cpp)
+add_executable(dlbot main.cpp path_util.cpp dlbot.cpp)
 
 target_link_libraries(dlbot /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
