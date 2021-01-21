@@ -1,8 +1,8 @@
-#include "path_util.h"
+#include "dlbot.h"
+#include "skeleton_daemon.h"
 
 #include <stdio.h>
 #include <tgbot/tgbot.h>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -11,67 +11,41 @@
 
 using namespace std;
 
-struct Settings {
-    string token;
-    string dest_path;
-    vector<int> allowed_users;
-};
+optional<dlbot::Settings> read_settings();
 
-optional<Settings> read_settings();
+void run_as_daemon(dlbot::DLBot& bot);
+void run_as_user(dlbot::DLBot& bot);
 
-void save_file(const TgBot::Api& api, string fileId, string filePath);
-
-int main() {
+int main(int argc, char** argv) {
     auto settings_maybe = read_settings();
     if (!settings_maybe.has_value()) {
-        return -1;
+        return EXIT_FAILURE;
     }
 
-    const Settings& settings = *settings_maybe;
+    dlbot::DLBot bot(*settings_maybe);
 
-    TgBot::Bot bot(settings.token);
-    bot.getEvents().onAnyMessage([&bot, &settings] (const TgBot::Message::Ptr message) {
-        const TgBot::Api& api = bot.getApi();
-        if (find(begin(settings.allowed_users), end(settings.allowed_users), message->from->id) == end(settings.allowed_users)) {
-            api.sendMessage(message->chat->id, "GTFO");
-            return;
-        }
-        if (!message->document) {
-            api.sendMessage(message->chat->id, "Hey! I am torrent bot. Send me a .torrent file.");
-            return;
-        }
-        try {
-            const auto& doc = *message->document;
-            filesystem::path filePath = settings.dest_path;
-            filePath = filePath / doc.fileName;
-            save_file(api, doc.fileId, filePath);
-            api.sendMessage(message->chat->id, "Received");
-        } catch (const exception& e) {
-            api.sendMessage(message->chat->id, "error");
-        }
-    });
-    try {
-        printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
-        TgBot::TgLongPoll longPoll(bot);
-        while (true) {
-            printf("Long poll started\n");
-            longPoll.start();
-        }
-    } catch (TgBot::TgException& e) {
-        printf("error: %s\n", e.what());
+    if (argc == 2 && strncmp(argv[1], "-d", 2) == 0) {
+        run_as_daemon(bot);
+    } else {
+        run_as_user(bot);
     }
-    return 0;
+
+    return EXIT_SUCCESS;
 }
 
-void save_file(const TgBot::Api& api, string fileId, string filePath) {
-    TgBot::File::Ptr file = api.getFile(fileId);
-    string content = api.downloadFile(file->filePath);
-    ofstream fs; 
-    fs.open(expand_path(filePath), ios::binary);
-    fs.write(content.c_str(), content.size());
+void run_as_daemon(dlbot::DLBot& bot) {
+        skeleton_daemon(strdup("dlbot"));
+        syslog (LOG_NOTICE, "dlbot started.");
+        bot.Run();
+        syslog (LOG_NOTICE, "dlbot terminated.");
+        closelog();
 }
 
-optional<Settings> read_settings() {
+void run_as_user(dlbot::DLBot& bot) {
+    bot.Run();
+}
+
+optional<dlbot::Settings> read_settings() {
     char* token = getenv("TOKEN");
     if (!token) {
         cerr << "No TOKEN in envioronment" << endl;
@@ -101,5 +75,5 @@ optional<Settings> read_settings() {
         }
         allowed_users.push_back(atoi(elem.c_str()));
     }
-    return Settings{.token = token, .dest_path = dest_path, .allowed_users = allowed_users};
+    return dlbot::Settings{.token = token, .dest_path = dest_path, .allowed_users = allowed_users};
 }
