@@ -5,7 +5,7 @@ include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall -Wextra -Werror")
 set(Boost_USE_MULTITHREADED ON)
 
 find_package(Threads REQUIRED)
@@ -24,7 +24,7 @@ ExternalProject_Add(tgbot-cpp
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR} -DOPENSSL_LIBRARIES=${OPENSSL_LIBRARIES}
 )
 
-include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
+include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 add_executable(dlbot main.cpp path_util.cpp dlbot.cpp)
