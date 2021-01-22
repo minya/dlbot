@@ -43,11 +43,11 @@ int main(int argc, char** argv) {
 }
 
 void run_as_daemon(dlbot::DLBot& bot) {
-        skeleton_daemon(strdup("dlbot"));
-        syslog (LOG_NOTICE, "dlbot started.");
-        bot.Run();
-        syslog (LOG_NOTICE, "dlbot terminated.");
-        closelog();
+    skeleton_daemon(strdup("dlbot"));
+    syslog (LOG_NOTICE, "dlbot started.");
+    bot.Run();
+    syslog (LOG_NOTICE, "dlbot terminated.");
+    closelog();
 }
 
 void run_as_user(dlbot::DLBot& bot) {
