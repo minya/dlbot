@@ -1,5 +1,6 @@
 #include "dlbot.h"
 #include "skeleton_daemon.h"
+#include "boost/program_options.hpp"
 
 #include <stdio.h>
 #include "tgbot/tgbot.h"
@@ -11,20 +12,28 @@
 
 using namespace std;
 
-optional<dlbot::Settings> read_settings();
+struct ProgramOptions {
+    std::string token;
+    std::string dest_path;
+    std::vector<int> allowed_users;
+    bool daemon;
+};
+
+optional<ProgramOptions> read_options(int argc, char** argv);
 
 void run_as_daemon(dlbot::DLBot& bot);
 void run_as_user(dlbot::DLBot& bot);
 
 int main(int argc, char** argv) {
-    auto settings_maybe = read_settings();
+    auto settings_maybe = read_options(argc, argv);
     if (!settings_maybe.has_value()) {
         return EXIT_FAILURE;
     }
 
-    dlbot::DLBot bot(*settings_maybe);
+    const ProgramOptions& po = *settings_maybe;
+    dlbot::DLBot bot({ .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users });
 
-    if (argc == 2 && strncmp(argv[1], "-d", 2) == 0) {
+    if (po.daemon) {
         run_as_daemon(bot);
     } else {
         run_as_user(bot);
@@ -45,35 +54,35 @@ void run_as_user(dlbot::DLBot& bot) {
     bot.Run();
 }
 
-optional<dlbot::Settings> read_settings() {
-    char* token = getenv("TOKEN");
-    if (!token) {
-        cerr << "No TOKEN in envioronment" << endl;
+optional<ProgramOptions> read_options(int argc, char** argv) {
+    namespace po = boost::program_options;
+
+    po::options_description desc("Usage");
+    desc.add_options()
+        ("help", "Produce help message")
+        ("token,t", po::value<string>()->required(), "Bot api token")
+        ("dest-path,d", po::value<string>()->required(), "Path for saving torrent files")
+        ("allowed-users,u", po::value<vector<int>>()->multitoken(), "Allowed users")
+        ("daemon,D", "Run as daemon")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        cout << desc << endl;
         return nullopt;
     }
-    char* dest_path = getenv("DEST_PATH");
-    if (!dest_path) {
-        cerr << "No DEST_PATH in envioronment" << endl;
+
+    if (!vm.count("token") || !vm.count("dest-path") || !vm.count("allowed-users"))  {
+        cerr << desc << endl;
         return nullopt;
     }
-    char* c_allowed_users = getenv("ALLOWED_USERS");
-    if (!c_allowed_users) {
-        cerr << "No ALLOWED_USERS in envioronment" << endl;
-        return nullopt;
-    }
-    vector<int> allowed_users;
-    string_view auv = c_allowed_users;
-    while (auv.size()) {
-        auto pos = auv.find(',');
-        string elem;
-        if (pos == string_view::npos) {
-            elem = auv;
-            auv.remove_prefix(auv.size());
-        } else {
-            elem = auv.substr(0, pos);
-            auv.remove_prefix(pos + 1);
-        }
-        allowed_users.push_back(atoi(elem.c_str()));
-    }
-    return dlbot::Settings{.token = token, .dest_path = dest_path, .allowed_users = allowed_users};
+    string token = vm["token"].as<string>();
+    string dest_path = vm["dest-path"].as<string>();
+    vector<int> allowed_users = vm["allowed-users"].as<vector<int>>();
+    bool daemon = vm.count("daemon");
+
+    return ProgramOptions{.token = token, .dest_path = dest_path, .allowed_users = allowed_users, .daemon = daemon };
 }
