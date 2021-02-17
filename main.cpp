@@ -1,6 +1,7 @@
 #include "dlbot.h"
 #include "skeleton_daemon.h"
 #include "boost/program_options.hpp"
+#include "transmission_rpc.h"
 
 #include <stdio.h>
 #include "tgbot/tgbot.h"
@@ -17,6 +18,7 @@ struct ProgramOptions {
     std::string dest_path;
     std::vector<int> allowed_users;
     bool daemon;
+    std::string transmission_rpc_uri;
 };
 
 optional<ProgramOptions> read_options(int argc, char** argv);
@@ -31,7 +33,9 @@ int main(int argc, char** argv) {
     }
 
     const ProgramOptions& po = *settings_maybe;
-    dlbot::DLBot bot({ .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users });
+    dlbot::DLBot bot(
+        { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
+        { po.transmission_rpc_uri });
 
     if (po.daemon) {
         run_as_daemon(bot);
@@ -63,6 +67,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
         ("token,t", po::value<string>()->required(), "Bot api token")
         ("dest-path,d", po::value<string>()->required(), "Path for saving torrent files")
         ("allowed-users,u", po::value<vector<int>>()->multitoken(), "Allowed users")
+        ("transmission-rpc-uri,R", po::value<string>()->required(), "Transmission RPC base uri")
         ("daemon,D", "Run as daemon")
     ;
 
@@ -75,7 +80,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
         return nullopt;
     }
 
-    if (!vm.count("token") || !vm.count("dest-path") || !vm.count("allowed-users"))  {
+    if (!vm.count("token") || !vm.count("dest-path") || !vm.count("allowed-users") || !vm.count("transmission-rpc-uri"))  {
         cerr << desc << endl;
         return nullopt;
     }
@@ -83,6 +88,13 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
     string dest_path = vm["dest-path"].as<string>();
     vector<int> allowed_users = vm["allowed-users"].as<vector<int>>();
     bool daemon = vm.count("daemon");
+    string transmission_rpc_uri = vm["transmission-rpc-uri"].as<string>();
 
-    return ProgramOptions{.token = token, .dest_path = dest_path, .allowed_users = allowed_users, .daemon = daemon };
+    return ProgramOptions{
+        .token = token,
+        .dest_path = dest_path,
+        .allowed_users = allowed_users,
+        .daemon = daemon,
+        .transmission_rpc_uri = transmission_rpc_uri
+    };
 }
