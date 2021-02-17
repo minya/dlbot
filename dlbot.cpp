@@ -4,26 +4,42 @@
 #include "tgbot/tgbot.h"
 #include <fstream>
 #include <filesystem>
+#include <sstream>
 
 using namespace std;
 using namespace dlbot;
 
-DLBot::DLBot(Settings settings): settings_(move(settings)) { }
+const vector<string> SUPPORTED_COMMANDS = 
+    { "/progress" };
+
+DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli)
+    : settings_(move(settings))
+    , tr_cli_(move(tr_cli)) { }
 
 void save_file(const TgBot::Api& api, string fileId, string filePath);
 
+string format_progress(const vector<TorrentProgress>& progress);
+
 void DLBot::Run() {
     TgBot::Bot bot(settings_.token);
+
     bot.getEvents().onAnyMessage([&bot, this] (const TgBot::Message::Ptr message) {
         const TgBot::Api& api = bot.getApi();
-        if (find(begin(settings_.allowed_users), end(settings_.allowed_users), message->from->id) == end(settings_.allowed_users)) {
-            api.sendMessage(message->chat->id, "GTFO");
+        if (!authorize(bot, message)) {
             return;
         }
+
+        for (const auto& cmd: SUPPORTED_COMMANDS) {
+            if (StringTools::startsWith(message->text, cmd)) {
+                return;
+            }
+        }
+
         if (!message->document) {
             api.sendMessage(message->chat->id, "Hey! I am torrent bot. Send me a .torrent file.");
             return;
         }
+
         try {
             const auto& doc = *message->document;
             filesystem::path filePath = settings_.dest_path;
@@ -34,6 +50,15 @@ void DLBot::Run() {
             api.sendMessage(message->chat->id, "error");
         }
     });
+
+    bot.getEvents().onCommand("progress", [&bot, this] (const TgBot::Message::Ptr message) {
+        if (!authorize(bot, message)) {
+            return;
+        }
+
+        bot.getApi().sendMessage(message->chat->id, format_progress(tr_cli_.GetProgressState()));
+    });
+
     try {
         printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
         TgBot::TgLongPoll longPoll(bot);
@@ -46,10 +71,29 @@ void DLBot::Run() {
     }
 }
 
+bool DLBot::authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) const {
+    const TgBot::Api& api = bot.getApi();
+    const auto& allowed_users = settings_.allowed_users;
+    if (find(begin(allowed_users), end(allowed_users), message->from->id) == end(allowed_users)) {
+        api.sendMessage(message->chat->id, "GTFO");
+        return false;
+    }
+    return true;
+};
+
 void save_file(const TgBot::Api& api, string fileId, string filePath) {
     TgBot::File::Ptr file = api.getFile(fileId);
     string content = api.downloadFile(file->filePath);
     ofstream fs; 
     fs.open(expand_path(filePath), ios::binary);
     fs.write(content.c_str(), content.size());
+}
+
+string format_progress(const vector<TorrentProgress>& progress) {
+    ostringstream os;
+    os << "Progress:\n";
+    for (const TorrentProgress& tp: progress) {
+        os << tp.name << ": " << tp.percentage << "\n";
+    }
+    return os.str();
 }
