@@ -10,7 +10,7 @@ set(Boost_USE_MULTITHREADED ON)
 
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(Boost REQUIRED system program_options)
+find_package(Boost REQUIRED system program_options json)
 find_package(CURL)
 include_directories(/usr/local/include ${OPENSSL_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
 if (CURL_FOUND)
@@ -27,6 +27,6 @@ ExternalProject_Add(tgbot-cpp
 include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
-add_executable(dlbot main.cpp path_util.cpp dlbot.cpp transmission_rpc.cpp)
+add_executable(dlbot main.cpp path_util.cpp dlbot.cpp transmission_rpc.cpp http_client.cpp)
 add_dependencies(dlbot tgbot-cpp)
-target_link_libraries(dlbot libTgBot.a Boost::program_options ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(dlbot libTgBot.a Boost::program_options Boost::json ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
