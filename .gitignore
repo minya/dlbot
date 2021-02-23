@@ -7,3 +7,5 @@ build/
 tgbot-cpp/
 
 *.swp
+cmake-*/
+.idea/
