@@ -5,7 +5,7 @@
 
 struct TorrentProgress {
     std::string name;
-    float percentage;
+    double percentage;
 };
 
 
