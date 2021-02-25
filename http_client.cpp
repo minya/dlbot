@@ -13,7 +13,7 @@ using namespace std;
 
 
 
-namespace me::brel::http {
+    namespace me::brel::http {
 
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
@@ -38,11 +38,16 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     stream.connect(results);
 
     // Set up an HTTP GET request message
-    http::request<http::string_body> req(str_to_verb(request.Verb()), request.Uri().PathAndQuery(), 11);
+    string dest = request.Uri().PathAndQuery();
+    http::request<http::string_body> req(str_to_verb(request.Verb()), dest, 11);
     req.set(http::field::host, request.Uri().host);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     // req.set(http::field::content_length, to_string(req_body.size()));
     req.set(http::field::connection, "Close");
+    req.set(http::field::content_length, to_string(request.Body().size()));
+    for (const auto& [k, v]: request.Headers()) {
+        req.set(k, v);
+    }
     req.body() = request.Body();
 
     // Send the HTTP request to the remote host
@@ -112,10 +117,10 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     }
 
     HttpResponse::HttpResponse(int status_code, std::unordered_map<std::string, std::string> headers,
-                               std::string body)
+                               std::string response)
                                : status_code_(status_code)
                                , headers_(move(headers))
-                               , body_(move(body)) {
+                               , response_(move(response)) {
 
     }
 
@@ -130,8 +135,13 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
         return &(it->second);
     }
 
-    std::string HttpResponse::Body() const {
-        return body_;
+    std::string_view HttpResponse::Body() const {
+        string_view result(response_);
+        auto body_pos = result.find("\r\n\r\n");
+        if (body_pos != string_view::npos) {
+            result.remove_prefix(body_pos + 4);
+        }
+        return result;
     }
 
     HttpRequest::HttpRequest(std::string verb, struct Uri uri, std::string body)
@@ -156,6 +166,11 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
 
     const std::string& HttpRequest::Body() const {
         return body_;
+    }
+
+
+    const std::unordered_map<std::string, std::string>& HttpRequest::Headers() const {
+        return headers_;
     }
 
     Uri parse_uri(std::string url) {
