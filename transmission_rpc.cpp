@@ -27,8 +27,10 @@ vector<TorrentProgress> TransmissionRpcClient::GetProgressState() {
     args["fields"] = fields;
     auto response_maybe = request(uri_,"1", "torrent-get", args);
     auto obj = *response_maybe;
-    vector<TorrentProgress> result;
-    for (const auto& item: obj.as_object()["response"].as_array()) {
+    vector<TorrentProgress> result(0);
+    auto arguments = obj.as_object()["arguments"].as_object();
+    auto torrents = arguments["torrents"].as_array();
+    for (const auto& item: torrents) {
         const auto& name_jstr = item.as_object().at("name").as_string();
         result.push_back(TorrentProgress{
             .name = {name_jstr.begin(), name_jstr.end()},
@@ -38,9 +40,9 @@ vector<TorrentProgress> TransmissionRpcClient::GetProgressState() {
     return result;
 }
 
-optional<json::value> str_to_json(const string& str);
+optional<json::value> str_to_json(string_view str);
 
-optional<json::value> request(string uri, string tag, string method, boost::json::object args) {
+optional<json::value> request(string s_uri, string tag, string method, boost::json::object args) {
     boost::json::object req_data;
     req_data["tag"] = tag; 
     req_data["method"] = method;
@@ -50,11 +52,13 @@ optional<json::value> request(string uri, string tag, string method, boost::json
     try
     {
         HttpClient cl;
-        HttpRequest req("POST", parse_uri(move(uri)), req_body);
+        Uri uri = parse_uri(move(s_uri));
+        HttpRequest req("POST", uri, req_body);
         auto resp = cl.MakeRequest(req);
         auto sessionId = resp.FindHeader("X-Transmission-Session-Id");
-        HttpRequest req2("POST", parse_uri(move(uri)), req_body);
-        req2.AddHeader("X-Transmission-Session-Id", *sessionId);
+        //uri.port = 9090;
+        HttpRequest req2("POST", uri, req_body);
+        req2.AddHeader("X-Transmission-Session-Id", *sessionId).AddHeader("Content-Type", "application/json");
         auto resp2 = cl.MakeRequest(req2);
         return str_to_json(resp2.Body());
     }
@@ -65,10 +69,10 @@ optional<json::value> request(string uri, string tag, string method, boost::json
     }
 }
 
-optional<json::value> str_to_json(const string& str) {
+optional<json::value> str_to_json(string_view str) {
     boost::json::stream_parser sp;
     json::error_code ec;
-    sp.write(str, ec);
+    sp.write({str.begin(), str.size()}, ec);
     if (ec)
         return nullopt;
 
