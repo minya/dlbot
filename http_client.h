@@ -4,6 +4,7 @@
 #include <sstream>
 #include <optional>
 #include <unordered_map>
+#include <string_view>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
@@ -16,12 +17,12 @@ public:
 
     int StatusCode() const;
     const std::string* FindHeader(const std::string& header_name) const;
-    std::string Body() const;
+    std::string_view Body() const;
 
 private:
     int status_code_;
     std::unordered_map<std::string, std::string> headers_;
-    std::string body_;
+    std::string response_;
 };
 
 struct Uri {
@@ -45,6 +46,7 @@ public:
     const std::string& Verb() const;
     const Uri& Uri() const;
     const std::string& Body() const;
+    const std::unordered_map<std::string, std::string>& Headers() const;
 private:
     std::string verb_;
     struct Uri uri_;
