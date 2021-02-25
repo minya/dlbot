@@ -27,6 +27,14 @@ ExternalProject_Add(tgbot-cpp
 include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
-add_executable(dlbot main.cpp path_util.cpp dlbot.cpp transmission_rpc.cpp http_client.cpp)
+add_executable(dlbot
+    main.cpp
+    path_util.cpp
+    dlbot.cpp
+    transmission_rpc.cpp
+    http/http_client.cpp 
+    http/http_request.cpp
+    http/http_response.cpp
+    http/uri.cpp)
 add_dependencies(dlbot tgbot-cpp)
 target_link_libraries(dlbot libTgBot.a Boost::program_options Boost::json ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
