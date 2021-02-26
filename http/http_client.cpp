@@ -1,4 +1,5 @@
 #include "http_client.h"
+#include "../3rdparty/Base64.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -7,6 +8,7 @@
 #include <boost/asio/ip/tcp.hpp>
 
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -19,6 +21,15 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 http::verb str_to_verb(const string& s_verb);
 
+
+string make_basic_auth_header_value(const string& username, const string& password) {
+    ostringstream os;
+    os << username << ':' << password;
+    ostringstream os_res;
+    os_res << "Basic " << macaron::Base64::Encode(os.str());
+    return os_res.str();
+}
+
 HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
 
     // The io_context is required for all I/O
@@ -29,6 +40,7 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     beast::tcp_stream stream(ioc_);
 
     // Look up the domain name
+    cout << "Resolve " << request.Uri().host << ':' << request.Uri().port << endl;
     auto const results = resolver.resolve(request.Uri().host, std::to_string(request.Uri().port));
 
     // Make the connection on the IP address we get from a lookup
@@ -42,6 +54,10 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     // req.set(http::field::content_length, to_string(req_body.size()));
     req.set(http::field::connection, "Close");
     req.set(http::field::content_length, to_string(request.Body().size()));
+    if (request.Uri().username.size() > 0) {
+        string auth_header_val = make_basic_auth_header_value(request.Uri().username, request.Uri().password);
+        req.set(http::field::authorization, auth_header_val);
+    }
     for (const auto& [k, v]: request.Headers()) {
         req.set(k, v);
     }
