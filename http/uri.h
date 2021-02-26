@@ -6,6 +6,8 @@ namespace me::brel::http {
 
 struct Uri {
     std::string scheme;
+    std::string username;
+    std::string password;
     std::string host;
     int port;
     std::string path;

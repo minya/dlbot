@@ -32,9 +32,13 @@ vector<TorrentProgress> TransmissionRpcClient::GetProgressState() {
     auto torrents = arguments["torrents"].as_array();
     for (const auto& item: torrents) {
         const auto& name_jstr = item.as_object().at("name").as_string();
+        const auto& percent_done_val = item.as_object().at("percentDone");
+        double percent_done = percent_done_val.is_double()
+                ? percent_done_val.as_double()
+                : percent_done_val.as_int64() * 1.0;
         result.push_back(TorrentProgress{
             .name = {name_jstr.begin(), name_jstr.end()},
-            .percentage = item.as_object().at("name").as_double(),
+            .percentage = percent_done,
         });
     }
     return result;
@@ -56,7 +60,6 @@ optional<json::value> request(string s_uri, string tag, string method, boost::js
         HttpRequest req("POST", uri, req_body);
         auto resp = cl.MakeRequest(req);
         auto sessionId = resp.FindHeader("X-Transmission-Session-Id");
-        //uri.port = 9090;
         HttpRequest req2("POST", uri, req_body);
         req2.AddHeader("X-Transmission-Session-Id", *sessionId).AddHeader("Content-Type", "application/json");
         auto resp2 = cl.MakeRequest(req2);
