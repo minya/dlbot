@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <vector>
 #include <optional>
+#include <syslog.h>
 
 using namespace std;
 
@@ -37,10 +38,15 @@ int main(int argc, char** argv) {
         { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
         { po.transmission_rpc_uri });
 
-    if (po.daemon) {
-        run_as_daemon(bot);
-    } else {
-        run_as_user(bot);
+    try {
+        if (po.daemon) {
+            run_as_daemon(bot);
+        } else {
+            run_as_user(bot);
+        }
+    } catch (exception e) {
+        syslog(LOG_ERR, "%s", e.what());
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
@@ -55,6 +61,7 @@ void run_as_daemon(dlbot::DLBot& bot) {
 }
 
 void run_as_user(dlbot::DLBot& bot) {
+    openlog(NULL, LOG_PID, LOG_USER | LOG_CONS);
     bot.Run();
 }
 
