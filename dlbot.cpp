@@ -23,7 +23,12 @@ string format_progress(const vector<TorrentProgress>& progress);
 void DLBot::Run() {
     TgBot::Bot bot(settings_.token);
 
-    bot.getEvents().onAnyMessage([&bot, this] (const TgBot::Message::Ptr message) {
+    TgBot::ReplyKeyboardMarkup::Ptr replyMarkup(new TgBot::ReplyKeyboardMarkup);
+    TgBot::KeyboardButton::Ptr btn(new TgBot::KeyboardButton);
+    btn->text = "/progress";
+    replyMarkup->keyboard.push_back({btn});
+
+    bot.getEvents().onAnyMessage([&bot, this, replyMarkup] (const TgBot::Message::Ptr message) {
         const TgBot::Api& api = bot.getApi();
         if (!authorize(bot, message)) {
             return;
@@ -36,7 +41,12 @@ void DLBot::Run() {
         }
 
         if (!message->document) {
-            api.sendMessage(message->chat->id, "Hey! I am torrent bot. Send me a .torrent file.");
+            api.sendMessage(
+                message->chat->id,
+                "Hey! I am torrent bot. Send me a .torrent file.",
+                false,
+                0,
+                replyMarkup);
             return;
         }
 
@@ -45,9 +55,9 @@ void DLBot::Run() {
             filesystem::path filePath = settings_.dest_path;
             filePath = filePath / doc.fileName;
             save_file(api, doc.fileId, filePath);
-            api.sendMessage(message->chat->id, "Received");
+            api.sendMessage(message->chat->id, "Received", false, 0, replyMarkup);
         } catch (const exception& e) {
-            api.sendMessage(message->chat->id, "error");
+            api.sendMessage(message->chat->id, "error", false, 0, replyMarkup);
         }
     });
 
