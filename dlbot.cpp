@@ -26,7 +26,9 @@ void DLBot::Run() {
     TgBot::ReplyKeyboardMarkup::Ptr replyMarkup(new TgBot::ReplyKeyboardMarkup);
     TgBot::KeyboardButton::Ptr btn(new TgBot::KeyboardButton);
     btn->text = "/progress";
-    replyMarkup->keyboard.push_back({btn});
+    vector<TgBot::KeyboardButton::Ptr> row;
+    row.push_back(btn);
+    replyMarkup->keyboard.push_back(row);
 
     bot.getEvents().onAnyMessage([&bot, this, replyMarkup] (const TgBot::Message::Ptr message) {
         const TgBot::Api& api = bot.getApi();
@@ -65,8 +67,12 @@ void DLBot::Run() {
         if (!authorize(bot, message)) {
             return;
         }
-
-        bot.getApi().sendMessage(message->chat->id, format_progress(tr_cli_.GetProgressState()));
+        auto progress_state = tr_cli_.GetProgressState();
+        if (!progress_state.has_value()) {
+            bot.getApi().sendMessage(message->chat->id, "Не удалось получить прогресс((");
+            return;
+        }
+        bot.getApi().sendMessage(message->chat->id, format_progress(*progress_state));
     });
 
     try {
