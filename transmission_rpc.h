@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 struct TorrentProgress {
     std::string name;
@@ -12,7 +13,7 @@ struct TorrentProgress {
 class TransmissionRpcClient {
 public:
     TransmissionRpcClient(std::string uri);
-    std::vector<TorrentProgress> GetProgressState();
+    std::optional<std::vector<TorrentProgress>> GetProgressState();
 
 private:
     std::string uri_;

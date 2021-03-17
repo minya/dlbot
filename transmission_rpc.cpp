@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <optional>
+#include <syslog.h>
 
 #include "http/http_client.h"
 
@@ -19,13 +20,16 @@ TransmissionRpcClient::TransmissionRpcClient(string uri)
 
 optional<json::value> request(string uri, string tag, string method, boost::json::object args);
 
-vector<TorrentProgress> TransmissionRpcClient::GetProgressState() {
+optional<vector<TorrentProgress>> TransmissionRpcClient::GetProgressState() {
     json::object args;
     json::array fields;
     fields.push_back(json::string("name"));
     fields.push_back(json::string("percentDone"));
     args["fields"] = fields;
     auto response_maybe = request(uri_,"1", "torrent-get", args);
+    if (!response_maybe.has_value()) {
+        return nullopt;
+    }
     auto obj = *response_maybe;
     vector<TorrentProgress> result(0);
     auto arguments = obj.as_object()["arguments"].as_object();
@@ -67,7 +71,7 @@ optional<json::value> request(string s_uri, string tag, string method, boost::js
     }
     catch(std::exception const& e)
     {
-        std::cerr << "Error: " << e.what() << std::endl;
+        syslog(LOG_ERR, "Error while http request: %s", e.what());
         return nullopt;
     }
 }

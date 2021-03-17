@@ -44,8 +44,10 @@ int main(int argc, char** argv) {
         } else {
             run_as_user(bot);
         }
-    } catch (exception e) {
-        syslog(LOG_ERR, "%s", e.what());
+    } catch (const std::exception &e) {
+        string what(e.what());
+        replace(begin(what), end(what), '\n', ' ');
+        syslog(LOG_ERR, "Fatal: %s", what.c_str());
         return EXIT_FAILURE;
     }
 
@@ -54,9 +56,9 @@ int main(int argc, char** argv) {
 
 void run_as_daemon(dlbot::DLBot& bot) {
     skeleton_daemon(strdup("dlbot"));
-    syslog (LOG_NOTICE, "dlbot started.");
+    syslog(LOG_NOTICE, "dlbot started.");
     bot.Run();
-    syslog (LOG_NOTICE, "dlbot terminated.");
+    syslog(LOG_NOTICE, "dlbot terminated.");
     closelog();
 }
 
