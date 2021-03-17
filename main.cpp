@@ -38,17 +38,10 @@ int main(int argc, char** argv) {
         { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
         { po.transmission_rpc_uri });
 
-    try {
-        if (po.daemon) {
-            run_as_daemon(bot);
-        } else {
-            run_as_user(bot);
-        }
-    } catch (const std::exception &e) {
-        string what(e.what());
-        replace(begin(what), end(what), '\n', ' ');
-        syslog(LOG_ERR, "Fatal: %s", what.c_str());
-        return EXIT_FAILURE;
+    if (po.daemon) {
+        run_as_daemon(bot);
+    } else {
+        run_as_user(bot);
     }
 
     return EXIT_SUCCESS;

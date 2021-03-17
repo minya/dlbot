@@ -5,6 +5,7 @@
 #include <fstream>
 #include <filesystem>
 #include <sstream>
+#include <syslog.h>
 
 using namespace std;
 using namespace dlbot;
@@ -75,16 +76,17 @@ void DLBot::Run() {
         bot.getApi().sendMessage(message->chat->id, format_progress(*progress_state));
     });
 
-    try {
-        printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
+        syslog(LOG_INFO, "Bot username: %s", bot.getApi().getMe()->username.c_str());
         TgBot::TgLongPoll longPoll(bot);
         while (true) {
-            printf("Long poll started\n");
-            longPoll.start();
+            try {
+                syslog(LOG_INFO, "Long poll started");
+                longPoll.start();
+            } catch (TgBot::TgException& e) {
+                syslog(LOG_ERR, "error: %s, cooldown", e.what());
+                sleep(60000);
+            }
         }
-    } catch (TgBot::TgException& e) {
-        printf("error: %s\n", e.what());
-    }
 }
 
 bool DLBot::authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) const {

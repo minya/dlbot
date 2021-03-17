@@ -40,7 +40,6 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     beast::tcp_stream stream(ioc_);
 
     // Look up the domain name
-    cout << "Resolve " << request.Uri().host << ':' << request.Uri().port << endl;
     auto const results = resolver.resolve(request.Uri().host, std::to_string(request.Uri().port));
 
     // Make the connection on the IP address we get from a lookup
