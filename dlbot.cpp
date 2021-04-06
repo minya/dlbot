@@ -21,17 +21,12 @@ void save_file(const TgBot::Api& api, string fileId, string filePath);
 
 string format_progress(const vector<TorrentProgress>& progress);
 
+TgBot::ReplyKeyboardMarkup::Ptr make_reply_markup();
+
 void DLBot::Run() {
     TgBot::Bot bot(settings_.token);
 
-    TgBot::ReplyKeyboardMarkup::Ptr replyMarkup(new TgBot::ReplyKeyboardMarkup);
-    TgBot::KeyboardButton::Ptr btn(new TgBot::KeyboardButton);
-    btn->text = "/progress";
-    vector<TgBot::KeyboardButton::Ptr> row;
-    row.push_back(btn);
-    replyMarkup->keyboard.push_back(row);
-
-    bot.getEvents().onAnyMessage([&bot, this, replyMarkup] (const TgBot::Message::Ptr message) {
+    bot.getEvents().onAnyMessage([&bot, this] (const TgBot::Message::Ptr message) {
         const TgBot::Api& api = bot.getApi();
         if (!authorize(bot, message)) {
             return;
@@ -43,13 +38,12 @@ void DLBot::Run() {
             }
         }
 
+        auto reply = [&](const string& msg) {
+            api.sendMessage(message->chat->id, msg, false, 0, make_reply_markup());
+        };
+
         if (!message->document) {
-            api.sendMessage(
-                message->chat->id,
-                "Hey! I am torrent bot. Send me a .torrent file.",
-                false,
-                0,
-                replyMarkup);
+            reply("Hey! I am torrent bot. Send me a .torrent file.");
             return;
         }
 
@@ -58,9 +52,9 @@ void DLBot::Run() {
             filesystem::path filePath = settings_.dest_path;
             filePath = filePath / doc.fileName;
             save_file(api, doc.fileId, filePath);
-            api.sendMessage(message->chat->id, "Received", false, 0, replyMarkup);
+            reply("Received");
         } catch (const exception& e) {
-            api.sendMessage(message->chat->id, "error", false, 0, replyMarkup);
+            reply("Error");
         }
     });
 
@@ -76,17 +70,17 @@ void DLBot::Run() {
         bot.getApi().sendMessage(message->chat->id, format_progress(*progress_state));
     });
 
-        syslog(LOG_INFO, "Bot username: %s", bot.getApi().getMe()->username.c_str());
-        TgBot::TgLongPoll longPoll(bot);
-        while (true) {
-            try {
-                syslog(LOG_INFO, "Long poll started");
-                longPoll.start();
-            } catch (TgBot::TgException& e) {
-                syslog(LOG_ERR, "error: %s, cooldown", e.what());
-                sleep(60000);
-            }
+    syslog(LOG_INFO, "Bot username: %s", bot.getApi().getMe()->username.c_str());
+    TgBot::TgLongPoll longPoll(bot);
+    while (true) {
+        try {
+            syslog(LOG_INFO, "Long poll started");
+            longPoll.start();
+        } catch (TgBot::TgException& e) {
+            syslog(LOG_ERR, "error: %s, cooldown", e.what());
+            sleep(60000);
         }
+    }
 }
 
 bool DLBot::authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) const {
@@ -114,4 +108,14 @@ string format_progress(const vector<TorrentProgress>& progress) {
         os << tp.name << ": " << tp.percentage << "\n";
     }
     return os.str();
+}
+
+TgBot::ReplyKeyboardMarkup::Ptr make_reply_markup() {
+    TgBot::ReplyKeyboardMarkup::Ptr replyMarkup(new TgBot::ReplyKeyboardMarkup);
+    TgBot::KeyboardButton::Ptr btn(new TgBot::KeyboardButton);
+    btn->text = "/progress";
+    vector<TgBot::KeyboardButton::Ptr> row;
+    row.push_back(btn);
+    replyMarkup->keyboard.push_back(row);
+    return replyMarkup;
 }
