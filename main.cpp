@@ -1,10 +1,8 @@
 #include "dlbot.h"
 #include "skeleton_daemon.h"
 #include "boost/program_options.hpp"
-#include "transmission_rpc.h"
 
 #include <stdio.h>
-#include "tgbot/tgbot.h"
 #include <iostream>
 #include <string>
 #include <filesystem>
