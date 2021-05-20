@@ -117,5 +117,6 @@ TgBot::ReplyKeyboardMarkup::Ptr make_reply_markup() {
     vector<TgBot::KeyboardButton::Ptr> row;
     row.push_back(btn);
     replyMarkup->keyboard.push_back(row);
+    replyMarkup->resizeKeyboard = true;
     return replyMarkup;
 }
