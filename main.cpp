@@ -48,7 +48,11 @@ int main(int argc, char** argv) {
 void run_as_daemon(dlbot::DLBot& bot) {
     skeleton_daemon(strdup("dlbot"));
     syslog(LOG_NOTICE, "dlbot started.");
-    bot.Run();
+    try {
+        bot.Run();
+    } catch(const exception& e) {
+        syslog(LOG_ERR, "%s", e.what());
+    }
     syslog(LOG_NOTICE, "dlbot terminated.");
     closelog();
 }
