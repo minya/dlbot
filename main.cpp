@@ -44,6 +44,9 @@ int main(int argc, char** argv) {
     sentry_options_set_dsn(options, po.sentry_dsn.c_str());
     sentry_init(options);
 
+    sentry_capture_event(
+        sentry_value_new_message_event(SENTRY_LEVEL_INFO, "custom", "starting dlbot..."));
+
     if (po.daemon) {
         run_as_daemon(bot);
     } else {
