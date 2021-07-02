@@ -10,7 +10,7 @@
 #include <optional>
 #include <syslog.h>
 
-#include "sentry.h"
+#include "sentry_logger.h"
 
 using namespace std;
 
@@ -21,11 +21,12 @@ struct ProgramOptions {
     bool daemon;
     string transmission_rpc_uri;
     string sentry_dsn;
+    string sentry_crashpad_path;
 };
 
 optional<ProgramOptions> read_options(int argc, char** argv);
 
-void run_as_daemon(dlbot::DLBot& bot);
+void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log);
 void run_as_user(dlbot::DLBot& bot);
 
 int main(int argc, char** argv) {
@@ -40,38 +41,34 @@ int main(int argc, char** argv) {
         { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
         { po.transmission_rpc_uri });
 
-    sentry_options_t *options = sentry_options_new();
-    sentry_options_set_dsn(options, po.sentry_dsn.c_str());
-    sentry_init(options);
+    SentryLogger sentry_log(po.sentry_dsn, po.sentry_crashpad_path);
 
-    sentry_capture_event(
-        sentry_value_new_message_event(SENTRY_LEVEL_INFO, "custom", "starting dlbot..."));
+    sentry_log.Info("dlbot starting...");
 
     if (po.daemon) {
-        run_as_daemon(bot);
+        run_as_daemon(bot, sentry_log);
     } else {
         run_as_user(bot);
     }
 
-
-    sentry_close();
     return EXIT_SUCCESS;
 }
 
-void run_as_daemon(dlbot::DLBot& bot) {
+void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log) {
     skeleton_daemon(strdup("dlbot"));
     syslog(LOG_NOTICE, "dlbot daemon started.");
+    sentry_log.Info("dlbot daemon started.");
+
     try {
         bot.Run();
     } catch(const exception& e) {
         syslog(LOG_ERR, "%s", e.what());
-        sentry_capture_event(
-            sentry_value_new_message_event(SENTRY_LEVEL_ERROR, "custom", e.what()));
+        throw e;
     } catch (...) {
         string msg = " ...something, not an exception, dunno what.";
         syslog(LOG_ERR, "%s", msg.c_str());
-        sentry_capture_event(
-            sentry_value_new_message_event(SENTRY_LEVEL_ERROR, "custom", msg.c_str()));
+        sentry_log.Error(msg);
+        throw;
     }
     syslog(LOG_NOTICE, "dlbot daemon terminated.");
     closelog();
@@ -94,6 +91,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
         ("transmission-rpc-uri,R", po::value<string>()->required(), "Transmission RPC base uri")
         ("daemon,D", "Run as daemon")
         ("sentry-dsn", po::value<string>()->required(), "Sentry DSN")
+        ("sentry-crashpad-path", po::value<string>()->required(), "Path to crashpad_handler")
     ;
 
     po::variables_map vm;
@@ -115,6 +113,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
     bool daemon = vm.count("daemon");
     string transmission_rpc_uri = vm["transmission-rpc-uri"].as<string>();
     string sentry_dsn = vm["sentry-dsn"].as<string>();
+    string sentry_crashpad_path = vm["sentry-crashpad-path"].as<string>();
 
     return ProgramOptions{
         .token = token,
@@ -123,5 +122,6 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
         .daemon = daemon,
         .transmission_rpc_uri = transmission_rpc_uri,
         .sentry_dsn = sentry_dsn,
+        .sentry_crashpad_path = sentry_crashpad_path,
     };
 }

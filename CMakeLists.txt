@@ -25,7 +25,7 @@ ExternalProject_Add(tgbot-cpp
 )
 ExternalProject_Add(sentry-native
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} #-DBUILD_SHARED_LIBS=OFF
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION}  #-DBUILD_SHARED_LIBS=OFF 
 )
 
 include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
@@ -36,6 +36,7 @@ add_executable(dlbot
     path_util.cpp
     dlbot.cpp
     transmission_rpc.cpp
+    sentry_logger.cpp
     http/http_client.cpp 
     http/http_request.cpp
     http/http_response.cpp
