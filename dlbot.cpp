@@ -13,9 +13,10 @@ using namespace dlbot;
 const vector<string> SUPPORTED_COMMANDS = 
     { "/progress" };
 
-DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli)
+DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli, SentryLogger& sentry_log)
     : settings_(move(settings))
-    , tr_cli_(move(tr_cli)) { }
+    , tr_cli_(move(tr_cli))
+    , sentry_log(sentry_log) { }
 
 void save_file(const TgBot::Api& api, string fileId, string filePath);
 
@@ -59,25 +60,41 @@ void DLBot::Run() {
     });
 
     bot.getEvents().onCommand("progress", [&bot, this] (const TgBot::Message::Ptr message) {
-        if (!authorize(bot, message)) {
-            return;
+        try {
+            if (!authorize(bot, message)) {
+                return;
+            }
+            auto progress_state = tr_cli_.GetProgressState();
+            if (!progress_state.has_value()) {
+                bot.getApi().sendMessage(message->chat->id, "Не удалось получить прогресс((");
+                return;
+            }
+            bot.getApi().sendMessage(message->chat->id, format_progress(*progress_state));
+        } catch (const exception& ex) {
+            sentry_log.Error(ex.what());
+            syslog(LOG_ERR, "%s", ex.what());
+        } catch (...) {
+            sentry_log.Error("error");
+            syslog(LOG_ERR, "error");
         }
-        auto progress_state = tr_cli_.GetProgressState();
-        if (!progress_state.has_value()) {
-            bot.getApi().sendMessage(message->chat->id, "Не удалось получить прогресс((");
-            return;
-        }
-        bot.getApi().sendMessage(message->chat->id, format_progress(*progress_state));
+
     });
 
     syslog(LOG_INFO, "Bot username: %s", bot.getApi().getMe()->username.c_str());
     TgBot::TgLongPoll longPoll(bot);
     while (true) {
         try {
-            syslog(LOG_INFO, "Long poll started");
             longPoll.start();
         } catch (TgBot::TgException& e) {
-            syslog(LOG_ERR, "error: %s, cooldown", e.what());
+            syslog(LOG_ERR, "[poll] tgerror: %s, cooldown", e.what());
+            sleep(60000);
+        } catch (exception& e) {
+            syslog(LOG_ERR, "[poll] error: %s, cooldown", e.what());
+            sleep(60000);
+        } catch (...) {
+            string msg = "[poll] ...something, not an exception, dunno what, cooldown";
+            syslog(LOG_ERR, "%s", msg.c_str());
+            sentry_log.Error(msg);
             sleep(60000);
         }
     }
