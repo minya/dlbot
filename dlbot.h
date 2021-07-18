@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "transmission_rpc.h"
+#include "sentry_logger.h"
 
 #include <string>
 #include <vector>
@@ -17,7 +18,7 @@ struct Settings {
 class DLBot {
 
 public:
-    DLBot(Settings settings, TransmissionRpcClient tr_cli);
+    DLBot(Settings settings, TransmissionRpcClient tr_cli, SentryLogger& sentry_log);
 
     void Run();
 
@@ -25,6 +26,7 @@ private:
     bool authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) const;
     Settings settings_;
     TransmissionRpcClient tr_cli_;
+    SentryLogger& sentry_log;
 };
 
 

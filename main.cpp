@@ -37,11 +37,11 @@ int main(int argc, char** argv) {
     }
 
     const ProgramOptions& po = *settings_maybe;
+    SentryLogger sentry_log(po.sentry_dsn, po.sentry_crashpad_path);
     dlbot::DLBot bot(
         { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
-        { po.transmission_rpc_uri });
-
-    SentryLogger sentry_log(po.sentry_dsn, po.sentry_crashpad_path);
+        { po.transmission_rpc_uri },
+        sentry_log);
 
     sentry_log.Info("dlbot starting...");
 
@@ -62,7 +62,7 @@ void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log) {
     try {
         bot.Run();
     } catch(const exception& e) {
-        syslog(LOG_ERR, "%s", e.what());
+        syslog(LOG_ERR, "(exception) %s", e.what());
         throw e;
     } catch (...) {
         string msg = " ...something, not an exception, dunno what.";
