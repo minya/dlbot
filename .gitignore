@@ -9,3 +9,6 @@ tgbot-cpp/
 *.swp
 cmake-*/
 .idea/
+
+
+.DS_Store
