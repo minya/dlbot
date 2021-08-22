@@ -13,7 +13,7 @@ public:
     HttpRequest& AddHeader(const std::string& name, std::string value);
 
     const std::string& Verb() const;
-    const Uri& Uri() const;
+    const struct Uri& Uri() const;
     const std::string& Body() const;
     const std::unordered_map<std::string, std::string>& Headers() const;
 private:
