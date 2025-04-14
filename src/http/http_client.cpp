@@ -92,10 +92,7 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     // return os.str();
     unordered_map<string, string> headers;
     for (const auto& field: res) {
-        headers.insert({
-                field.name_string().to_string(),
-                field.value().to_string()
-        });
+        headers.insert({ field.name_string(), field.value() });
     }
     return HttpResponse(static_cast<int>(res.result()), headers, os.str());
 }

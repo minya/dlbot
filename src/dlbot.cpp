@@ -40,7 +40,7 @@ void DLBot::Run() {
         }
 
         auto reply = [&](const string& msg) {
-            api.sendMessage(message->chat->id, msg, false, 0, make_reply_markup());
+            api.sendMessage(message->chat->id, msg, nullptr, nullptr, make_reply_markup());
         };
 
         if (!message->document) {
