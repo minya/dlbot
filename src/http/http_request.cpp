@@ -5,14 +5,14 @@ using namespace std;
 namespace me::brel::http {
 
 HttpRequest::HttpRequest(std::string verb, struct Uri uri, std::string body)
-    : verb_(move(verb))
-    , uri_(move(uri))
-    , body_(move(body)){
+    : verb_(std::move(verb))
+    , uri_(std::move(uri))
+    , body_(std::move(body)){
 
 }
 
 HttpRequest &HttpRequest::AddHeader(const std::string& name, std::string value) {
-    headers_[name] = move(value);
+    headers_[name] = std::move(value);
     return *this;
 }
 

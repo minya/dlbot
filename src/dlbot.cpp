@@ -14,8 +14,8 @@ const vector<string> SUPPORTED_COMMANDS =
     { "/progress" };
 
 DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli, SentryLogger& sentry_log)
-    : settings_(move(settings))
-    , tr_cli_(move(tr_cli))
+    : settings_(std::move(settings))
+    , tr_cli_(std::move(tr_cli))
     , sentry_log(sentry_log) { }
 
 void save_file(const TgBot::Api& api, string fileId, string filePath);
