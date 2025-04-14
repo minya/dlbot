@@ -78,7 +78,7 @@ optional<json::value> request(string s_uri, string tag, string method, boost::js
 
 optional<json::value> str_to_json(string_view str) {
     boost::json::stream_parser sp;
-    json::error_code ec;
+    error_code ec;
     sp.write({str.begin(), str.size()}, ec);
     if (ec)
         return nullopt;
