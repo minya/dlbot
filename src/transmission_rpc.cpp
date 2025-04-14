@@ -16,7 +16,7 @@ namespace json = boost::json;
 using namespace me::brel::http;
 
 TransmissionRpcClient::TransmissionRpcClient(string uri)
-    : uri_(move(uri)) {}
+    : uri_(std::move(uri)) {}
 
 optional<json::value> request(string uri, string tag, string method, boost::json::object args);
 
@@ -60,7 +60,7 @@ optional<json::value> request(string s_uri, string tag, string method, boost::js
     try
     {
         HttpClient cl;
-        Uri uri = parse_uri(move(s_uri));
+        Uri uri = parse_uri(std::move(s_uri));
         HttpRequest req("POST", uri, req_body);
         auto resp = cl.MakeRequest(req);
         auto sessionId = resp.FindHeader("X-Transmission-Session-Id");

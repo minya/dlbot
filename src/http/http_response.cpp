@@ -7,8 +7,8 @@ namespace me::brel::http {
 HttpResponse::HttpResponse(int status_code, std::unordered_map<std::string, std::string> headers,
                             std::string response)
                             : status_code_(status_code)
-                            , headers_(move(headers))
-                            , response_(move(response)) {
+                            , headers_(std::move(headers))
+                            , response_(std::move(response)) {
 
 }
 
