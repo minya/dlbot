@@ -9,7 +9,7 @@
 class SentryLogger {
 
 public:
-	SentryLogger(const std::string& dsn, const std::string& crashpad_path);
+	SentryLogger(const std::string& dsn, const std::string& crashpad_path, const std::string& database_path);
 
 	virtual ~SentryLogger();
 

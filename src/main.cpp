@@ -12,6 +12,7 @@
 #include <syslog.h>
 
 #include "sentry_logger.h"
+#include "path_util.h"
 
 using namespace std;
 
@@ -30,6 +31,10 @@ optional<ProgramOptions> read_options(int argc, char** argv);
 void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log);
 void run_as_user(dlbot::DLBot& bot);
 
+string absolute_path(const string& path) {
+    return filesystem::absolute(expand_path(path)).string();
+}
+
 int main(int argc, char** argv) {
 
     auto settings_maybe = read_options(argc, argv);
@@ -38,9 +43,21 @@ int main(int argc, char** argv) {
     }
 
     const ProgramOptions& po = *settings_maybe;
-    SentryLogger sentry_log(po.sentry_dsn, po.sentry_crashpad_path);
+
+    // Resolve relative paths now: the daemon chdir()s to "/".
+    const string dest_path = absolute_path(po.dest_path);
+    const string crashpad_path = absolute_path(po.sentry_crashpad_path);
+    const string sentry_db_path = absolute_path(".sentrydb");
+
+    // Daemonize before initializing Sentry: forking and closing all fds
+    // afterwards would cut it off from the crashpad handler.
+    if (po.daemon) {
+        skeleton_daemon("dlbot");
+    }
+
+    SentryLogger sentry_log(po.sentry_dsn, crashpad_path, sentry_db_path);
     dlbot::DLBot bot(
-        { .token = po.token, .dest_path = po.dest_path, .allowed_users = po.allowed_users },
+        { .token = po.token, .dest_path = dest_path, .allowed_users = po.allowed_users },
         { po.transmission_rpc_uri },
         sentry_log);
 
@@ -56,7 +73,6 @@ int main(int argc, char** argv) {
 }
 
 void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log) {
-    skeleton_daemon("dlbot");
     syslog(LOG_NOTICE, "dlbot daemon started.");
     sentry_log.Info("dlbot daemon started.");
 

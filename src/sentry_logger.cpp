@@ -3,11 +3,11 @@
 using namespace std;
 
 
-SentryLogger::SentryLogger(const std::string& dsn, const std::string& crashpad_path) {
+SentryLogger::SentryLogger(const std::string& dsn, const std::string& crashpad_path, const std::string& database_path) {
 	sentry_options_t *options = sentry_options_new();
 	sentry_options_set_dsn(options, dsn.c_str());
 	sentry_options_set_handler_path(options, crashpad_path.c_str());
-	sentry_options_set_database_path(options, ".sentrydb");
+	sentry_options_set_database_path(options, database_path.c_str());
 	sentry_init(options);
 }
 
