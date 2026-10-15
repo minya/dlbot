@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 }
 
 void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log) {
-    skeleton_daemon(strdup("dlbot"));
+    skeleton_daemon("dlbot");
     syslog(LOG_NOTICE, "dlbot daemon started.");
     sentry_log.Info("dlbot daemon started.");
 

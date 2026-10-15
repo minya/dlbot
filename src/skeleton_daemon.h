@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 
-static void skeleton_daemon(char* name)
+static void skeleton_daemon(const char* name)
 {
     pid_t pid;
 
