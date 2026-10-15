@@ -62,12 +62,24 @@ optional<json::value> request(string s_uri, string tag, string method, boost::js
         HttpClient cl;
         Uri uri = parse_uri(std::move(s_uri));
         HttpRequest req("POST", uri, req_body);
+        req.AddHeader("Content-Type", "application/json");
         auto resp = cl.MakeRequest(req);
-        auto sessionId = resp.FindHeader("X-Transmission-Session-Id");
-        HttpRequest req2("POST", uri, req_body);
-        req2.AddHeader("X-Transmission-Session-Id", *sessionId).AddHeader("Content-Type", "application/json");
-        auto resp2 = cl.MakeRequest(req2);
-        return str_to_json(resp2.Body());
+        if (resp.StatusCode() == 409) {
+            // Transmission CSRF protection: retry with the session id it handed us.
+            auto sessionId = resp.FindHeader("X-Transmission-Session-Id");
+            if (sessionId == nullptr) {
+                syslog(LOG_ERR, "Transmission returned 409 without X-Transmission-Session-Id");
+                return nullopt;
+            }
+            HttpRequest req2("POST", uri, req_body);
+            req2.AddHeader("X-Transmission-Session-Id", *sessionId).AddHeader("Content-Type", "application/json");
+            resp = cl.MakeRequest(req2);
+        }
+        if (resp.StatusCode() != 200) {
+            syslog(LOG_ERR, "Transmission RPC returned HTTP %d", resp.StatusCode());
+            return nullopt;
+        }
+        return str_to_json(resp.Body());
     }
     catch(std::exception const& e)
     {
