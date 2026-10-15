@@ -109,9 +109,12 @@ void DLBot::Run() {
 }
 
 bool DLBot::authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) const {
+    if (!message || !message->chat) {
+        return false;
+    }
     const TgBot::Api& api = bot.getApi();
     const auto& allowed_users = settings_.allowed_users;
-    if (find(begin(allowed_users), end(allowed_users), message->from->id) == end(allowed_users)) {
+    if (!message->from || find(begin(allowed_users), end(allowed_users), message->from->id) == end(allowed_users)) {
         api.sendMessage(message->chat->id, "GTFO");
         return false;
     }
