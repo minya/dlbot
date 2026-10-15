@@ -24,6 +24,8 @@ DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli, SentryLogger& sent
 
 void save_file(const TgBot::Api& api, string fileId, string filePath);
 
+string safe_file_name(const optional<string>& name);
+
 string format_progress(const vector<TorrentProgress>& progress);
 
 TgBot::ReplyKeyboardMarkup::Ptr make_reply_markup();
@@ -55,7 +57,7 @@ void DLBot::Run() {
         try {
             const auto& doc = *message->document;
             filesystem::path filePath = settings_.dest_path;
-            filePath = filePath / doc.fileName.value_or("file.torrent");
+            filePath = filePath / safe_file_name(doc.fileName);
             save_file(api, doc.fileId, filePath);
             reply("Received");
         } catch (const exception& e) {
@@ -121,6 +123,15 @@ void save_file(const TgBot::Api& api, string fileId, string filePath) {
     ofstream fs; 
     fs.open(expand_path(filePath), ios::binary);
     fs.write(content.c_str(), content.size());
+}
+
+// Keep only the last path component so a crafted name can't escape dest_path.
+string safe_file_name(const optional<string>& name) {
+    string result = filesystem::path(name.value_or("")).filename().string();
+    if (result.empty() || result == "." || result == "..") {
+        return "file.torrent";
+    }
+    return result;
 }
 
 string format_progress(const vector<TorrentProgress>& progress) {
