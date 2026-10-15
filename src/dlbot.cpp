@@ -34,7 +34,7 @@ void DLBot::Run() {
         }
 
         for (const auto& cmd: SUPPORTED_COMMANDS) {
-            if (StringTools::startsWith(message->text, cmd)) {
+            if (message->text.value_or("").starts_with(cmd)) {
                 return;
             }
         }
@@ -51,7 +51,7 @@ void DLBot::Run() {
         try {
             const auto& doc = *message->document;
             filesystem::path filePath = settings_.dest_path;
-            filePath = filePath / doc.fileName;
+            filePath = filePath / doc.fileName.value_or("file.torrent");
             save_file(api, doc.fileId, filePath);
             reply("Received");
         } catch (const exception& e) {
@@ -80,7 +80,8 @@ void DLBot::Run() {
 
     });
 
-    syslog(LOG_INFO, "Bot username: %s", bot.getApi().getMe()->username.c_str());
+    std::string bot_username = bot.getApi().getMe()->username.value_or("");
+    syslog(LOG_INFO, "Bot username: %s", bot_username.c_str());
     TgBot::TgLongPoll longPoll(bot);
     while (true) {
         try {
@@ -112,7 +113,7 @@ bool DLBot::authorize(const TgBot::Bot& bot, const TgBot::Message::Ptr message) 
 
 void save_file(const TgBot::Api& api, string fileId, string filePath) {
     TgBot::File::Ptr file = api.getFile(fileId);
-    string content = api.downloadFile(file->filePath);
+    string content = api.downloadFile(file->filePath.value());
     ofstream fs; 
     fs.open(expand_path(filePath), ios::binary);
     fs.write(content.c_str(), content.size());
