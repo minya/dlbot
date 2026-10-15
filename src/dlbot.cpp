@@ -61,6 +61,7 @@ void DLBot::Run() {
             save_file(api, doc.fileId, filePath);
             reply("Received");
         } catch (const exception& e) {
+            syslog(LOG_ERR, "Error while saving file: %s", e.what());
             reply("Error");
         }
     });
@@ -123,6 +124,10 @@ void save_file(const TgBot::Api& api, string fileId, string filePath) {
     ofstream fs; 
     fs.open(expand_path(filePath), ios::binary);
     fs.write(content.c_str(), content.size());
+    fs.close();
+    if (!fs) {
+        throw runtime_error("failed to write " + filePath);
+    }
 }
 
 // Keep only the last path component so a crafted name can't escape dest_path.
