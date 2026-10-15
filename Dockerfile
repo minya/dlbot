@@ -18,9 +18,9 @@ WORKDIR /code
 # Copy the source code
 COPY ./src /code/
 # Build the application using clang
-RUN CC=clang CXX=clang++ cmake .
-RUN CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF .
-RUN cmake --build .
+ENV CC=clang CXX=clang++
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
+RUN cmake --build build
 
 # Create a slimmer runtime container
 FROM alpine:3.18
@@ -29,7 +29,7 @@ RUN apk add --no-cache libcurl openssl zlib boost
 # Set the working directory
 WORKDIR /app
 # Copy the built application from the build container
-COPY --from=build /code/dlbot .
+COPY --from=build /code/build/dlbot .
 
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
