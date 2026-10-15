@@ -1,5 +1,6 @@
 #include "path_util.h"
 
+#include <cstdlib>
 #include <pwd.h>
 #include <unistd.h>
 #include <sys/types.h>

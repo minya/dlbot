@@ -2,10 +2,12 @@
 #include "path_util.h"
 
 #include "tgbot/tgbot.h"
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include <sstream>
 #include <syslog.h>
+#include <unistd.h>
 
 using namespace std;
 using namespace dlbot;
