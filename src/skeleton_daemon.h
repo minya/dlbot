@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <syslog.h>
@@ -56,6 +57,16 @@ static void skeleton_daemon(const char* name)
     for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
     {
         close (x);
+    }
+
+    /* Point stdin/stdout/stderr at /dev/null so later files don't land on fds 0-2 */
+    int null_fd = open("/dev/null", O_RDWR);
+    if (null_fd >= 0) {
+        dup2(null_fd, STDIN_FILENO);
+        dup2(null_fd, STDOUT_FILENO);
+        dup2(null_fd, STDERR_FILENO);
+        if (null_fd > STDERR_FILENO)
+            close(null_fd);
     }
 
     /* Open the log file */
