@@ -15,6 +15,8 @@ using namespace dlbot;
 const vector<string> SUPPORTED_COMMANDS = 
     { "/progress" };
 
+const unsigned int POLL_ERROR_COOLDOWN_SEC = 60;
+
 DLBot::DLBot(Settings settings, TransmissionRpcClient tr_cli, SentryLogger& sentry_log)
     : settings_(std::move(settings))
     , tr_cli_(std::move(tr_cli))
@@ -90,15 +92,15 @@ void DLBot::Run() {
             longPoll.start();
         } catch (TgBot::TgException& e) {
             syslog(LOG_ERR, "[poll] tgerror: %s, cooldown", e.what());
-            sleep(60000);
+            sleep(POLL_ERROR_COOLDOWN_SEC);
         } catch (exception& e) {
             syslog(LOG_ERR, "[poll] error: %s, cooldown", e.what());
-            sleep(60000);
+            sleep(POLL_ERROR_COOLDOWN_SEC);
         } catch (...) {
             string msg = "[poll] ...something, not an exception, dunno what, cooldown";
             syslog(LOG_ERR, "%s", msg.c_str());
             sentry_log.Error(msg);
-            sleep(60000);
+            sleep(POLL_ERROR_COOLDOWN_SEC);
         }
     }
 }
