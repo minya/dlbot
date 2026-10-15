@@ -113,11 +113,15 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
     ;
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
-    if (vm.count("help")) {
-        cout << desc << endl;
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        if (vm.count("help")) {
+            cout << desc << endl;
+            return nullopt;
+        }
+        po::notify(vm);
+    } catch (const po::error& e) {
+        cerr << e.what() << endl << desc << endl;
         return nullopt;
     }
 
