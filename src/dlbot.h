@@ -3,6 +3,7 @@
 #include "transmission_rpc.h"
 #include "sentry_logger.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <tgbot/tgbot.h>
@@ -12,7 +13,7 @@ namespace dlbot {
 struct Settings {
     std::string token;
     std::string dest_path;
-    std::vector<int> allowed_users;
+    std::vector<std::int64_t> allowed_users;
     };
     
 class DLBot {

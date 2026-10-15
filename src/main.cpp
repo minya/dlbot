@@ -3,6 +3,7 @@
 #include "boost/program_options.hpp"
 
 #include <stdio.h>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -17,7 +18,7 @@ using namespace std;
 struct ProgramOptions {
     string token;
     string dest_path;
-    vector<int> allowed_users;
+    vector<int64_t> allowed_users;
     bool daemon;
     string transmission_rpc_uri;
     string sentry_dsn;
@@ -87,7 +88,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
         ("help", "Produce help message")
         ("token,t", po::value<string>()->required(), "Bot api token")
         ("dest-path,d", po::value<string>()->required(), "Path for saving torrent files")
-        ("allowed-users,u", po::value<vector<int>>()->multitoken(), "Allowed users")
+        ("allowed-users,u", po::value<vector<int64_t>>()->multitoken(), "Allowed users")
         ("transmission-rpc-uri,R", po::value<string>()->required(), "Transmission RPC base uri")
         ("daemon,D", "Run as daemon")
         ("sentry-dsn", po::value<string>()->required(), "Sentry DSN")
@@ -109,7 +110,7 @@ optional<ProgramOptions> read_options(int argc, char** argv) {
     }
     string token = vm["token"].as<string>();
     string dest_path = vm["dest-path"].as<string>();
-    vector<int> allowed_users = vm["allowed-users"].as<vector<int>>();
+    vector<int64_t> allowed_users = vm["allowed-users"].as<vector<int64_t>>();
     bool daemon = vm.count("daemon");
     string transmission_rpc_uri = vm["transmission-rpc-uri"].as<string>();
     string sentry_dsn = vm["sentry-dsn"].as<string>();
