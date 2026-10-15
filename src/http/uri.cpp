@@ -13,12 +13,15 @@ namespace me::brel::http {
 
 string Uri::PathAndQuery() const {
     ostringstream os;
-    os << this->path << this->query;
+    os << (this->path.empty() ? "/" : this->path);
+    if (!this->query.empty()) {
+        os << '?' << this->query;
+    }
     return os.str();
 }
 
 Uri parse_uri(std::string url) {
-    regex ex("(http|https)://((.+):(.+)@)?([^/ :]+):?([^/ ]*)(/?[^ #?]*)\x3f?([^ #]*)#?([^ ]*)");
+    regex ex("(http|https)://((.+):(.+)@)?([^/ :]+):?([^/ ]*)(/?[^ #?]*)(?:\\?([^ #]*))?(?:#([^ ]*))?");
 
     cmatch what;
     if(!regex_match(url.c_str(), what, ex))
