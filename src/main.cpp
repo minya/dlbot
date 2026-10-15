@@ -80,7 +80,8 @@ void run_as_daemon(dlbot::DLBot& bot, SentryLogger& sentry_log) {
         bot.Run();
     } catch(const exception& e) {
         syslog(LOG_ERR, "(exception) %s", e.what());
-        throw e;
+        sentry_log.Error(e.what());
+        throw;
     } catch (...) {
         string msg = " ...something, not an exception, dunno what.";
         syslog(LOG_ERR, "%s", msg.c_str());
