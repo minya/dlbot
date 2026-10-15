@@ -22,10 +22,12 @@ endif()
 
 ExternalProject_Add(tgbot-cpp
     GIT_REPOSITORY https://github.com/reo7sp/tgbot-cpp
+    GIT_TAG bff3045898dfb4a8af624e58552dab9cd3087c1f # v1.13+1
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR} -DOPENSSL_LIBRARIES=${OPENSSL_LIBRARIES}
 )
 ExternalProject_Add(sentry-native
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+    GIT_TAG d04453d6d3c4fbde9015b591e64df474e2164781 # 0.17.3+9
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DSENTRY_BACKEND=crashpad
 )
 
