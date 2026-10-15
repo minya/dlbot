@@ -17,7 +17,7 @@ public:
 private:
     int status_code_;
     std::unordered_map<std::string, std::string> headers_;
-    std::string response_;
+    std::string body_;
 };
 
 } //namespace me::brel::http

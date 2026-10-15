@@ -5,10 +5,10 @@ using namespace std;
 namespace me::brel::http {
 
 HttpResponse::HttpResponse(int status_code, std::unordered_map<std::string, std::string> headers,
-                            std::string response)
+                            std::string body)
                             : status_code_(status_code)
                             , headers_(std::move(headers))
-                            , response_(std::move(response)) {
+                            , body_(std::move(body)) {
 
 }
 
@@ -24,12 +24,7 @@ const std::string *HttpResponse::FindHeader(const std::string& header_name) cons
 }
 
 std::string_view HttpResponse::Body() const {
-    string_view result(response_);
-    auto body_pos = result.find("\r\n\r\n");
-    if (body_pos != string_view::npos) {
-        result.remove_prefix(body_pos + 4);
-    }
-    return result;
+    return body_;
 }
 
 }

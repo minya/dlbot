@@ -71,14 +71,10 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
     beast::flat_buffer buffer;
 
     // Declare a container to hold the response
-    http::response<http::dynamic_body> res;
+    http::response<http::string_body> res;
 
     // Receive the HTTP response
     http::read(stream, buffer, res);
-
-    // Write the message to ostringstream
-    ostringstream os;
-    os << res;
 
     // Gracefully close the socket
     beast::error_code ec;
@@ -91,12 +87,11 @@ HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
         throw beast::system_error{ec};
 
     // If we get here then the connection is closed gracefully
-    // return os.str();
     unordered_map<string, string> headers;
     for (const auto& field: res) {
         headers.insert({ field.name_string(), field.value() });
     }
-    return HttpResponse(static_cast<int>(res.result()), headers, os.str());
+    return HttpResponse(static_cast<int>(res.result()), std::move(headers), std::move(res.body()));
 }
 
     HttpClient::HttpClient() {
