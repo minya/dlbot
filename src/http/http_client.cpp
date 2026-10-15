@@ -33,6 +33,9 @@ string make_basic_auth_header_value(const string& username, const string& passwo
 }
 
 HttpResponse HttpClient::MakeRequest(const HttpRequest& request) {
+    if (request.Uri().scheme != "http") {
+        throw runtime_error("unsupported uri scheme: " + request.Uri().scheme + " (only http is supported)");
+    }
 
     // The io_context is required for all I/O
     // net::io_context ioc;
