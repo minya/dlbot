@@ -30,6 +30,9 @@ RUN apk add --no-cache libcurl openssl zlib boost
 WORKDIR /app
 # Copy the built application from the build container
 COPY --from=build /code/build/dlbot .
+# sentry-native is built as a shared library and needs its crashpad handler at runtime
+COPY --from=build /code/build/external/lib/libsentry.so /usr/local/lib/
+COPY --from=build /code/build/external/bin/crashpad_handler .
 
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
